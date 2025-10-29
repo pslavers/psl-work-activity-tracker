@@ -1,51 +1,64 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ActivityTimer } from "@/components/ActivityTimer";
 import { ActivityList } from "@/components/ActivityList";
 import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { Activity, Project, Tag } from "@/types/activity";
-import { Clock, Download } from "lucide-react";
+import { Clock, Download, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
-  const [activities, setActivities] = useState<Activity[]>(() => {
-    const saved = localStorage.getItem("workActivities");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.map((a: Activity) => ({
-        ...a,
-        startTime: new Date(a.startTime),
-        endTime: new Date(a.endTime),
-        tagIds: a.tagIds || [],
-      }));
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [projects] = useState<Project[]>([]);
+  const [tags] = useState<Tag[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
     }
-    return [];
-  });
+  }, [user, loading, navigate]);
 
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem("workProjects");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [tags, setTags] = useState<Tag[]>(() => {
-    const saved = localStorage.getItem("workTags");
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  // Load activities from database
   useEffect(() => {
-    localStorage.setItem("workActivities", JSON.stringify(activities));
-  }, [activities]);
+    if (!user) return;
 
-  useEffect(() => {
-    localStorage.setItem("workProjects", JSON.stringify(projects));
-  }, [projects]);
+    const loadActivities = async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('date', { ascending: false });
 
-  useEffect(() => {
-    localStorage.setItem("workTags", JSON.stringify(tags));
-  }, [tags]);
+      if (error) {
+        toast.error('Failed to load activities');
+        console.error(error);
+      } else if (data) {
+        const parsedActivities = data.map((a) => ({
+          id: a.id,
+          name: a.description,
+          duration: a.duration,
+          startTime: new Date(a.date),
+          endTime: new Date(new Date(a.date).getTime() + a.duration),
+          projectId: a.project || undefined,
+          tagIds: a.tags || [],
+        }));
+        setActivities(parsedActivities);
+      }
+      setLoadingData(false);
+    };
 
-  const handleActivityComplete = (activity: {
+    loadActivities();
+  }, [user]);
+
+
+  const handleActivityComplete = async (activity: {
     name: string;
     duration: number;
     startTime: Date;
@@ -53,9 +66,35 @@ const Index = () => {
     projectId?: string;
     tagIds: string[];
   }) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('activities')
+      .insert({
+        user_id: user.id,
+        project: activity.projectId || null,
+        tags: activity.tagIds,
+        description: activity.name,
+        duration: activity.duration,
+        date: activity.startTime.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error("Failed to save activity");
+      console.error(error);
+      return;
+    }
+
     const newActivity: Activity = {
-      id: crypto.randomUUID(),
-      ...activity,
+      id: data.id,
+      name: activity.name,
+      duration: activity.duration,
+      startTime: activity.startTime,
+      endTime: activity.endTime,
+      projectId: activity.projectId,
+      tagIds: activity.tagIds,
     };
 
     setActivities((prev) => [newActivity, ...prev]);
@@ -65,26 +104,27 @@ const Index = () => {
   };
 
   const handleCreateProject = (name: string, color: string) => {
-    const newProject: Project = {
-      id: crypto.randomUUID(),
-      name,
-      color,
-    };
-    setProjects((prev) => [...prev, newProject]);
-    toast.success("Project created!", { description: name });
+    // Projects will be stored in cloud in future update
+    toast.info("Project feature coming soon!");
   };
 
   const handleCreateTag = (name: string, color: string) => {
-    const newTag: Tag = {
-      id: crypto.randomUUID(),
-      name,
-      color,
-    };
-    setTags((prev) => [...prev, newTag]);
-    toast.success("Tag created!", { description: name });
+    // Tags will be stored in cloud in future update
+    toast.info("Tag feature coming soon!");
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('activities')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error("Failed to delete activity");
+      console.error(error);
+      return;
+    }
+
     setActivities((prev) => prev.filter((a) => a.id !== id));
     toast.success("Activity deleted");
   };
@@ -154,6 +194,21 @@ const Index = () => {
     });
   };
 
+  if (loading || loadingData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Clock className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
@@ -167,15 +222,25 @@ const Index = () => {
           <p className="text-muted-foreground text-lg mb-4">
             Record your work activities as you do them
           </p>
-          <Button 
-            onClick={handleExport} 
-            variant="outline" 
-            className="gap-2"
-            disabled={activities.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            Export Activities
-          </Button>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <Button 
+              onClick={handleExport} 
+              variant="outline" 
+              className="gap-2"
+              disabled={activities.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export Activities
+            </Button>
+            <Button 
+              onClick={signOut}
+              variant="ghost" 
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
