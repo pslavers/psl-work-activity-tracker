@@ -101,7 +101,7 @@ export const AddActivityDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {!controlledOpen && (
+      {controlledOpen === undefined && (
         <DialogTrigger asChild>
           <Button variant="outline" className="gap-2">
             <Plus className="h-4 w-4" />
