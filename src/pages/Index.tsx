@@ -3,8 +3,10 @@ import { ActivityTimer } from "@/components/ActivityTimer";
 import { ActivityList } from "@/components/ActivityList";
 import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { Activity, Project, Tag } from "@/types/activity";
-import { Clock } from "lucide-react";
+import { Clock, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const Index = () => {
   const [activities, setActivities] = useState<Activity[]>(() => {
@@ -98,6 +100,60 @@ const Index = () => {
     return `${minutes}m`;
   };
 
+  const handleExport = () => {
+    if (activities.length === 0) {
+      toast.error("No activities to export");
+      return;
+    }
+
+    let exportText = "WORK ACTIVITY TRACKER - EXPORT\n";
+    exportText += "=".repeat(50) + "\n\n";
+    exportText += `Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}\n`;
+    exportText += `Total Activities: ${activities.length}\n`;
+    
+    const totalDuration = activities.reduce((sum, a) => sum + a.duration, 0);
+    exportText += `Total Time Tracked: ${formatDuration(totalDuration)}\n\n`;
+    exportText += "=".repeat(50) + "\n\n";
+
+    activities.forEach((activity, index) => {
+      exportText += `${index + 1}. ${activity.name}\n`;
+      exportText += `   Duration: ${formatDuration(activity.duration)}\n`;
+      exportText += `   Time: ${format(activity.startTime, "yyyy-MM-dd HH:mm")} - ${format(activity.endTime, "HH:mm")}\n`;
+      
+      if (activity.projectId) {
+        const project = projects.find(p => p.id === activity.projectId);
+        if (project) {
+          exportText += `   Project: ${project.name}\n`;
+        }
+      }
+      
+      if (activity.tagIds.length > 0) {
+        const activityTags = activity.tagIds
+          .map(tagId => tags.find(t => t.id === tagId)?.name)
+          .filter(Boolean);
+        if (activityTags.length > 0) {
+          exportText += `   Tags: ${activityTags.join(", ")}\n`;
+        }
+      }
+      
+      exportText += "\n";
+    });
+
+    const blob = new Blob([exportText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `activities-export-${format(new Date(), "yyyy-MM-dd")}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Activities exported!", {
+      description: `${activities.length} activities saved to file`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
@@ -108,9 +164,15 @@ const Index = () => {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
             Work Activity Tracker
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-lg mb-4">
             Record your work activities as you do them
           </p>
+          {activities.length > 0 && (
+            <Button onClick={handleExport} variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export Activities
+            </Button>
+          )}
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
