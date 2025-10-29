@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ActivityTimer } from "@/components/ActivityTimer";
 import { ActivityList } from "@/components/ActivityList";
+import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { Activity, Project, Tag } from "@/types/activity";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -112,20 +113,33 @@ const Index = () => {
           </p>
         </header>
 
-        <div className="space-y-12">
-          <ActivityTimer 
-            onActivityComplete={handleActivityComplete}
-            projects={projects}
-            tags={tags}
-            onCreateProject={handleCreateProject}
-            onCreateTag={handleCreateTag}
-          />
-          <ActivityList 
-            activities={activities} 
-            projects={projects}
-            tags={tags}
-            onDelete={handleDelete} 
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          <div className="lg:col-span-2 space-y-8">
+            <ActivityTimer 
+              onActivityComplete={handleActivityComplete}
+              projects={projects}
+              tags={tags}
+              onCreateProject={handleCreateProject}
+              onCreateTag={handleCreateTag}
+            />
+            <ActivityList 
+              activities={activities} 
+              projects={projects}
+              tags={tags}
+              onDelete={handleDelete} 
+            />
+          </div>
+          
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-8">
+              <RecentActivitiesPanel
+                activities={activities}
+                projects={projects}
+                tags={tags}
+                limit={10}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
