@@ -427,48 +427,51 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
+      <div className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="container max-w-6xl mx-auto px-4 h-16 flex items-center gap-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem 
+                onClick={() => setAddDialogOpen(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Past Activity
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleExport}
+                disabled={activities.length === 0}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export Activities
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={signOut}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">
             Work Activity Tracker
           </h1>
-          <p className="text-muted-foreground text-lg mb-4">
+        </div>
+      </div>
+      
+      <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
+        <div className="text-center mb-12">
+          <p className="text-muted-foreground text-lg">
             Record your work activities as you do them
           </p>
-          <div className="flex gap-2 justify-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center">
-                <DropdownMenuItem 
-                  onClick={() => setAddDialogOpen(true)}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Past Activity
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleExport}
-                  disabled={activities.length === 0}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Export Activities
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={signOut}
-                  className="gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2 space-y-8">
