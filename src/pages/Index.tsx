@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ActivityTimer } from "@/components/ActivityTimer";
+import { MultiActivityTimer } from "@/components/MultiActivityTimer";
 import { ActivityList } from "@/components/ActivityList";
 import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { AddActivityDialog } from "@/components/AddActivityDialog";
+import { EditActivityDialog } from "@/components/EditActivityDialog";
 import { Activity, Project, Tag } from "@/types/activity";
 import { Clock, Download, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ const Index = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -199,6 +202,80 @@ const Index = () => {
     }
   };
 
+  const handleEdit = (activity: Activity) => {
+    setEditingActivity(activity);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (id: string, updates: {
+    name: string;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+    projectId?: string;
+    tagIds: string[];
+  }) => {
+    if (!user) return;
+
+    // First, update the activity itself
+    const { error: activityError } = await supabase
+      .from('activities')
+      .update({
+        description: updates.name,
+        duration: updates.duration,
+        date: updates.startTime.toISOString(),
+        project_id: updates.projectId || null,
+      })
+      .eq('id', id);
+
+    if (activityError) {
+      toast.error("Failed to update activity");
+      console.error(activityError);
+      return;
+    }
+
+    // Delete existing activity_tags
+    await supabase
+      .from('activity_tags')
+      .delete()
+      .eq('activity_id', id);
+
+    // Insert new activity_tags
+    if (updates.tagIds.length > 0) {
+      const { error: tagsError } = await supabase
+        .from('activity_tags')
+        .insert(
+          updates.tagIds.map(tagId => ({
+            activity_id: id,
+            tag_id: tagId,
+          }))
+        );
+
+      if (tagsError) {
+        console.error('Error updating activity tags:', tagsError);
+      }
+    }
+
+    // Update local state
+    setActivities(prev =>
+      prev.map(act =>
+        act.id === id
+          ? {
+              ...act,
+              name: updates.name,
+              duration: updates.duration,
+              startTime: updates.startTime,
+              endTime: updates.endTime,
+              projectId: updates.projectId,
+              tagIds: updates.tagIds,
+            }
+          : act
+      )
+    );
+
+    toast.success("Activity updated");
+  };
+
   const handleDelete = async (id: string) => {
     // activity_tags will be automatically deleted due to CASCADE
     const { error } = await supabase
@@ -339,7 +416,7 @@ const Index = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2 space-y-8">
-            <ActivityTimer 
+            <MultiActivityTimer 
               onActivityComplete={handleActivityComplete}
               projects={projects}
               tags={tags}
@@ -350,7 +427,8 @@ const Index = () => {
               activities={activities} 
               projects={projects}
               tags={tags}
-              onDelete={handleDelete} 
+              onDelete={handleDelete}
+              onEdit={handleEdit}
             />
           </div>
           
@@ -365,6 +443,17 @@ const Index = () => {
             </div>
           </div>
         </div>
+
+        <EditActivityDialog
+          activity={editingActivity}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          projects={projects}
+          tags={tags}
+          onCreateProject={handleCreateProject}
+          onCreateTag={handleCreateTag}
+          onSave={handleSaveEdit}
+        />
       </div>
     </div>
   );

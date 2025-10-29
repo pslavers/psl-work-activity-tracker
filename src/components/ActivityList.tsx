@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Clock, Trash2, Folder } from "lucide-react";
+import { Clock, Trash2, Folder, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -10,9 +10,10 @@ interface ActivityListProps {
   projects: Project[];
   tags: Tag[];
   onDelete: (id: string) => void;
+  onEdit: (activity: Activity) => void;
 }
 
-export const ActivityList = ({ activities, projects, tags, onDelete }: ActivityListProps) => {
+export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: ActivityListProps) => {
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -118,14 +119,22 @@ export const ActivityList = ({ activities, projects, tags, onDelete }: ActivityL
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(activity.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(activity)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(activity.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}
