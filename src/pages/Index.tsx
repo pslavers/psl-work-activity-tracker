@@ -167,12 +167,15 @@ const Index = () => {
           <p className="text-muted-foreground text-lg mb-4">
             Record your work activities as you do them
           </p>
-          {activities.length > 0 && (
-            <Button onClick={handleExport} variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export Activities
-            </Button>
-          )}
+          <Button 
+            onClick={handleExport} 
+            variant="outline" 
+            className="gap-2"
+            disabled={activities.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export Activities
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
