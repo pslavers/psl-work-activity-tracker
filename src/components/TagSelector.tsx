@@ -49,10 +49,25 @@ export const TagSelector = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <TagIcon className="h-4 w-4" />
+        <Button variant="outline" className="gap-2 h-auto min-h-10 py-2">
+          <TagIcon className="h-4 w-4 flex-shrink-0" />
           {selectedTags.length > 0 ? (
-            <span>{selectedTags.length} tag{selectedTags.length > 1 ? 's' : ''}</span>
+            <div className="flex flex-wrap gap-1">
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="text-xs h-5 px-1.5"
+                  style={{ 
+                    backgroundColor: `${tag.color}20`,
+                    color: tag.color,
+                    borderColor: tag.color
+                  }}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
           ) : (
             "Add Tags"
           )}
