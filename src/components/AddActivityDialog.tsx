@@ -13,6 +13,7 @@ interface AddActivityDialogProps {
   projects: Project[];
   tags: Tag[];
   onCreateProject: (name: string, color: string) => void;
+  onEditProject?: (projectId: string, name: string, color: string) => void;
   onCreateTag: (name: string, color: string) => void;
   onAddActivity: (activity: {
     name: string;
@@ -30,6 +31,7 @@ export const AddActivityDialog = ({
   projects,
   tags,
   onCreateProject,
+  onEditProject,
   onCreateTag,
   onAddActivity,
   open: controlledOpen,
@@ -183,6 +185,7 @@ export const AddActivityDialog = ({
               selectedProjectId={selectedProjectId}
               onSelectProject={setSelectedProjectId}
               onCreateProject={onCreateProject}
+              onEditProject={onEditProject}
             />
           </div>
 

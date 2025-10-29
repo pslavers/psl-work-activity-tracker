@@ -16,6 +16,7 @@ interface EditActivityDialogProps {
   projects: Project[];
   tags: Tag[];
   onCreateProject: (name: string, color: string) => void;
+  onEditProject?: (projectId: string, name: string, color: string) => void;
   onCreateTag: (name: string, color: string) => void;
   onSave: (id: string, updates: {
     name: string;
@@ -34,6 +35,7 @@ export const EditActivityDialog = ({
   projects,
   tags,
   onCreateProject,
+  onEditProject,
   onCreateTag,
   onSave,
 }: EditActivityDialogProps) => {
@@ -161,6 +163,7 @@ export const EditActivityDialog = ({
               selectedProjectId={selectedProjectId}
               onSelectProject={setSelectedProjectId}
               onCreateProject={onCreateProject}
+              onEditProject={onEditProject}
             />
           </div>
 

@@ -184,6 +184,29 @@ const Index = () => {
     }
   };
 
+  const handleEditProject = async (projectId: string, name: string, color: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('projects')
+      .update({
+        name,
+        color,
+      })
+      .eq('id', projectId);
+
+    if (error) {
+      toast.error('Failed to update project');
+      console.error(error);
+      return;
+    }
+
+    setProjects(prev => 
+      prev.map(p => p.id === projectId ? { ...p, name, color } : p)
+    );
+    toast.success('Project updated');
+  };
+
   const handleCreateTag = async (name: string, color: string) => {
     if (!user) return;
 
@@ -474,6 +497,7 @@ const Index = () => {
               projects={projects}
               tags={tags}
               onCreateProject={handleCreateProject}
+              onEditProject={handleEditProject}
               onCreateTag={handleCreateTag}
               user={user}
             />
@@ -506,6 +530,7 @@ const Index = () => {
           projects={projects}
           tags={tags}
           onCreateProject={handleCreateProject}
+          onEditProject={handleEditProject}
           onCreateTag={handleCreateTag}
           onSave={handleSaveEdit}
         />
@@ -514,6 +539,7 @@ const Index = () => {
           projects={projects}
           tags={tags}
           onCreateProject={handleCreateProject}
+          onEditProject={handleEditProject}
           onCreateTag={handleCreateTag}
           onAddActivity={handleActivityComplete}
           open={addDialogOpen}

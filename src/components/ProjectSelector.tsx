@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Folder, Plus, Check } from "lucide-react";
+import { Folder, Plus, Check, Pencil } from "lucide-react";
 import { Project } from "@/types/activity";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ interface ProjectSelectorProps {
   selectedProjectId?: string;
   onSelectProject: (projectId: string | undefined) => void;
   onCreateProject: (name: string, color: string) => void;
+  onEditProject?: (projectId: string, name: string, color: string) => void;
 }
 
 const COLORS = [
@@ -24,8 +25,10 @@ export const ProjectSelector = ({
   selectedProjectId,
   onSelectProject,
   onCreateProject,
+  onEditProject,
 }: ProjectSelectorProps) => {
   const [isCreating, setIsCreating] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +46,28 @@ export const ProjectSelector = ({
       setSelectedColor(COLORS[0]);
       setIsCreating(false);
     }
+  };
+
+  const handleStartEdit = (project: Project) => {
+    setEditingProjectId(project.id);
+    setNewProjectName(project.name);
+    setSelectedColor(project.color);
+    setIsCreating(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingProjectId && newProjectName.trim() && onEditProject) {
+      onEditProject(editingProjectId, newProjectName.trim(), selectedColor);
+      setEditingProjectId(null);
+      setNewProjectName("");
+      setSelectedColor(COLORS[0]);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProjectId(null);
+    setNewProjectName("");
+    setSelectedColor(COLORS[0]);
   };
 
   return (
@@ -65,7 +90,51 @@ export const ProjectSelector = ({
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="start">
         <div className="space-y-2">
-          {!isCreating ? (
+          {editingProjectId ? (
+            <div className="space-y-3">
+              <Input
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="Project name"
+                className="h-9"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveEdit();
+                  if (e.key === "Escape") handleCancelEdit();
+                }}
+                autoFocus
+              />
+              <div className="flex gap-2 flex-wrap">
+                {COLORS.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={cn(
+                      "w-6 h-6 rounded-full transition-transform hover:scale-110",
+                      selectedColor === color && "ring-2 ring-offset-2 ring-primary"
+                    )}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={!newProjectName.trim()}
+                  className="flex-1"
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : !isCreating ? (
             <>
               <Input
                 value={searchQuery}
@@ -92,26 +161,41 @@ export const ProjectSelector = ({
                   </div>
                 ) : (
                   filteredProjects.map((project) => (
-                    <button
+                    <div
                       key={project.id}
-                      onClick={() => {
-                        onSelectProject(project.id);
-                        setSearchQuery("");
-                      }}
                       className={cn(
-                        "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
+                        "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm group",
                         selectedProjectId === project.id && "bg-accent"
                       )}
                     >
-                      <span 
-                        className="w-2 h-2 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: project.color }}
-                      />
-                      <span className="truncate">{project.name}</span>
-                      {selectedProjectId === project.id && (
-                        <Check className="h-4 w-4 ml-auto flex-shrink-0" />
+                      <button
+                        onClick={() => {
+                          onSelectProject(project.id);
+                          setSearchQuery("");
+                        }}
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                      >
+                        <span 
+                          className="w-2 h-2 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: project.color }}
+                        />
+                        <span className="truncate">{project.name}</span>
+                        {selectedProjectId === project.id && (
+                          <Check className="h-4 w-4 ml-auto flex-shrink-0" />
+                        )}
+                      </button>
+                      {onEditProject && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEdit(project);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 hover:text-primary transition-all"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   ))
                 )}
               </div>
