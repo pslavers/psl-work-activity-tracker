@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ActivityTimer } from "@/components/ActivityTimer";
 import { ActivityList } from "@/components/ActivityList";
 import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
+import { AddActivityDialog } from "@/components/AddActivityDialog";
 import { Activity, Project, Tag } from "@/types/activity";
 import { Clock, Download, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -309,6 +310,13 @@ const Index = () => {
             Record your work activities as you do them
           </p>
           <div className="flex gap-2 justify-center flex-wrap">
+            <AddActivityDialog
+              projects={projects}
+              tags={tags}
+              onCreateProject={handleCreateProject}
+              onCreateTag={handleCreateTag}
+              onAddActivity={handleActivityComplete}
+            />
             <Button 
               onClick={handleExport} 
               variant="outline" 
