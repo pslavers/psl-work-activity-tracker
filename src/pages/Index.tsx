@@ -467,12 +467,6 @@ const Index = () => {
       </div>
       
       <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <div className="text-center mb-12">
-          <p className="text-muted-foreground text-lg">
-            Record your work activities as you do them
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2 space-y-8">
             <MultiActivityTimer 
