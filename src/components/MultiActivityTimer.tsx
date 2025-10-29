@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Play, Pause, Square, X } from "lucide-react";
+import { Play, Pause, Square, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -434,6 +434,50 @@ export const MultiActivityTimer = ({
     );
   };
 
+  const updateActivityStartTime = async (id: string, newTime: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (!activity) return;
+
+    // Parse the time input (HH:MM format)
+    const [hours, minutes] = newTime.split(':').map(Number);
+    const newStartTime = new Date();
+    newStartTime.setHours(hours, minutes, 0, 0);
+
+    // Don't allow future times
+    if (newStartTime > new Date()) {
+      toast.error('Start time cannot be in the future');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('active_activities')
+      .update({ 
+        start_time: newStartTime.toISOString(),
+        elapsed_time: Date.now() - newStartTime.getTime() - activity.pausedTime
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating start time:', error);
+      toast.error('Failed to update start time');
+      return;
+    }
+
+    setActivities(prev =>
+      prev.map(act => 
+        act.id === id 
+          ? { 
+              ...act, 
+              startTime: newStartTime,
+              elapsedTime: Date.now() - newStartTime.getTime() - act.pausedTime
+            } 
+          : act
+      )
+    );
+
+    toast.success('Start time updated');
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -485,6 +529,19 @@ export const MultiActivityTimer = ({
             </div>
 
             <div className="space-y-3">
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Start Time</label>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="time"
+                    value={activity.startTime.toTimeString().slice(0, 5)}
+                    onChange={(e) => updateActivityStartTime(activity.id, e.target.value)}
+                    className="w-32"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Project</label>
                 <ProjectSelector
