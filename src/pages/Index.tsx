@@ -418,6 +418,7 @@ const Index = () => {
               tags={tags}
               onCreateProject={handleCreateProject}
               onCreateTag={handleCreateTag}
+              user={user}
             />
             <ActivityList 
               activities={activities} 

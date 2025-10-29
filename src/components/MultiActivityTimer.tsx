@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { ProjectSelector } from "./ProjectSelector";
 import { TagSelector } from "./TagSelector";
 import { Project, Tag } from "@/types/activity";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { User } from "@supabase/supabase-js";
 
 interface ActiveActivity {
   id: string;
@@ -33,6 +36,7 @@ interface MultiActivityTimerProps {
   tags: Tag[];
   onCreateProject: (name: string, color: string) => void;
   onCreateTag: (name: string, color: string) => void;
+  user: User;
 }
 
 export const MultiActivityTimer = ({
@@ -41,16 +45,199 @@ export const MultiActivityTimer = ({
   tags,
   onCreateProject,
   onCreateTag,
+  user,
 }: MultiActivityTimerProps) => {
   const [activities, setActivities] = useState<ActiveActivity[]>([]);
   const [newActivityName, setNewActivityName] = useState("");
+  const [loading, setLoading] = useState(true);
   const intervalRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
+  // Load active activities from database
   useEffect(() => {
+    const loadActiveActivities = async () => {
+      const { data: activeActivitiesData, error } = await supabase
+        .from('active_activities')
+        .select(`
+          *,
+          active_activity_tags(tag_id)
+        `)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading active activities:', error);
+        toast.error('Failed to load active activities');
+        setLoading(false);
+        return;
+      }
+
+      if (activeActivitiesData) {
+        const loadedActivities: ActiveActivity[] = activeActivitiesData.map(act => ({
+          id: act.id,
+          name: act.description,
+          startTime: new Date(act.start_time),
+          elapsedTime: act.elapsed_time,
+          isRunning: act.is_running,
+          isPaused: !act.is_running,
+          pausedTime: act.paused_time || 0,
+          projectId: act.project_id || undefined,
+          tagIds: act.active_activity_tags?.map((t: any) => t.tag_id) || [],
+        }));
+
+        setActivities(loadedActivities);
+
+        // Start intervals for running activities
+        loadedActivities.forEach(act => {
+          if (act.isRunning && !act.isPaused) {
+            const interval = setInterval(() => {
+              setActivities(prev =>
+                prev.map(a =>
+                  a.id === act.id && a.isRunning && !a.isPaused
+                    ? { ...a, elapsedTime: Date.now() - a.startTime.getTime() - a.pausedTime }
+                    : a
+                )
+              );
+            }, 100);
+            intervalRefs.current.set(act.id, interval);
+          }
+        });
+      }
+
+      setLoading(false);
+    };
+
+    loadActiveActivities();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('active_activities_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'active_activities',
+        },
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const { data: tagsData } = await supabase
+              .from('active_activity_tags')
+              .select('tag_id')
+              .eq('active_activity_id', payload.new.id);
+
+            const newActivity: ActiveActivity = {
+              id: payload.new.id,
+              name: payload.new.description,
+              startTime: new Date(payload.new.start_time),
+              elapsedTime: payload.new.elapsed_time,
+              isRunning: payload.new.is_running,
+              isPaused: !payload.new.is_running,
+              pausedTime: payload.new.paused_time || 0,
+              projectId: payload.new.project_id || undefined,
+              tagIds: tagsData?.map(t => t.tag_id) || [],
+            };
+
+            setActivities(prev => {
+              // Check if activity already exists
+              if (prev.some(a => a.id === newActivity.id)) return prev;
+              
+              const updated = [...prev, newActivity];
+              
+              // Start interval if running
+              if (newActivity.isRunning && !newActivity.isPaused) {
+                const interval = setInterval(() => {
+                  setActivities(current =>
+                    current.map(a =>
+                      a.id === newActivity.id && a.isRunning && !a.isPaused
+                        ? { ...a, elapsedTime: Date.now() - a.startTime.getTime() - a.pausedTime }
+                        : a
+                    )
+                  );
+                }, 100);
+                intervalRefs.current.set(newActivity.id, interval);
+              }
+              
+              return updated;
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedActivity = payload.new;
+            
+            setActivities(prev =>
+              prev.map(act => {
+                if (act.id === updatedActivity.id) {
+                  const newIsRunning = updatedActivity.is_running;
+                  const newIsPaused = !newIsRunning;
+                  
+                  // Manage interval based on running state
+                  if (newIsRunning && !newIsPaused) {
+                    // Start interval if not already running
+                    if (!intervalRefs.current.has(act.id)) {
+                      const interval = setInterval(() => {
+                        setActivities(current =>
+                          current.map(a =>
+                            a.id === updatedActivity.id && a.isRunning && !a.isPaused
+                              ? { ...a, elapsedTime: Date.now() - a.startTime.getTime() - a.pausedTime }
+                              : a
+                          )
+                        );
+                      }, 100);
+                      intervalRefs.current.set(act.id, interval);
+                    }
+                  } else {
+                    // Clear interval if paused
+                    const interval = intervalRefs.current.get(act.id);
+                    if (interval) {
+                      clearInterval(interval);
+                      intervalRefs.current.delete(act.id);
+                    }
+                  }
+                  
+                  return {
+                    ...act,
+                    elapsedTime: updatedActivity.elapsed_time,
+                    isRunning: newIsRunning,
+                    isPaused: newIsPaused,
+                    pausedTime: updatedActivity.paused_time || 0,
+                    projectId: updatedActivity.project_id || undefined,
+                  };
+                }
+                return act;
+              })
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const interval = intervalRefs.current.get(payload.old.id);
+            if (interval) {
+              clearInterval(interval);
+              intervalRefs.current.delete(payload.old.id);
+            }
+            setActivities(prev => prev.filter(a => a.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       intervalRefs.current.forEach(interval => clearInterval(interval));
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
+
+  // Periodically sync running activities to database
+  useEffect(() => {
+    const syncInterval = setInterval(async () => {
+      const runningActivities = activities.filter(a => a.isRunning && !a.isPaused);
+      
+      for (const activity of runningActivities) {
+        await supabase
+          .from('active_activities')
+          .update({
+            elapsed_time: activity.elapsedTime,
+          })
+          .eq('id', activity.id);
+      }
+    }, 5000); // Sync every 5 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [activities]);
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -60,54 +247,80 @@ export const MultiActivityTimer = ({
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  const startNewActivity = () => {
+  const startNewActivity = async () => {
     if (!newActivityName.trim()) return;
 
-    const newActivity: ActiveActivity = {
-      id: crypto.randomUUID(),
-      name: newActivityName,
-      startTime: new Date(),
-      elapsedTime: 0,
-      isRunning: true,
-      isPaused: false,
-      pausedTime: 0,
-      projectId: undefined,
-      tagIds: [],
-    };
+    const startTime = new Date();
 
-    setActivities(prev => [...prev, newActivity]);
-    setNewActivityName("");
-
-    const interval = setInterval(() => {
-      setActivities(prev =>
-        prev.map(act =>
-          act.id === newActivity.id && act.isRunning && !act.isPaused
-            ? { ...act, elapsedTime: Date.now() - act.startTime.getTime() - act.pausedTime }
-            : act
-        )
-      );
-    }, 100);
-
-    intervalRefs.current.set(newActivity.id, interval);
-  };
-
-  const togglePause = (id: string) => {
-    setActivities(prev =>
-      prev.map(act => {
-        if (act.id === id) {
-          if (!act.isPaused) {
-            return { ...act, isPaused: true };
-          } else {
-            const pauseDuration = Date.now() - act.startTime.getTime() - act.elapsedTime;
-            return { ...act, isPaused: false, pausedTime: act.pausedTime + pauseDuration };
-          }
-        }
-        return act;
+    const { data, error } = await supabase
+      .from('active_activities')
+      .insert({
+        user_id: user.id,
+        description: newActivityName,
+        start_time: startTime.toISOString(),
+        elapsed_time: 0,
+        is_running: true,
+        paused_time: 0,
       })
-    );
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating active activity:', error);
+      toast.error('Failed to start activity');
+      return;
+    }
+
+    setNewActivityName("");
+    // Activity will be added via realtime subscription
   };
 
-  const stopActivity = (id: string) => {
+  const togglePause = async (id: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (!activity) return;
+
+    const newIsPaused = !activity.isPaused;
+    const newPausedTime = newIsPaused
+      ? activity.pausedTime
+      : activity.pausedTime + (Date.now() - activity.startTime.getTime() - activity.elapsedTime);
+
+    const { error } = await supabase
+      .from('active_activities')
+      .update({
+        is_running: !newIsPaused,
+        paused_time: newPausedTime,
+        elapsed_time: activity.elapsedTime,
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error toggling pause:', error);
+      toast.error('Failed to update activity');
+      return;
+    }
+
+    // Clear or start interval based on pause state
+    if (newIsPaused) {
+      const interval = intervalRefs.current.get(id);
+      if (interval) {
+        clearInterval(interval);
+        intervalRefs.current.delete(id);
+      }
+    } else {
+      const interval = setInterval(() => {
+        setActivities(prev =>
+          prev.map(act =>
+            act.id === id && act.isRunning && !act.isPaused
+              ? { ...act, elapsedTime: Date.now() - act.startTime.getTime() - act.pausedTime }
+              : act
+          )
+        );
+      }, 100);
+      intervalRefs.current.set(id, interval);
+    }
+  };
+
+  const stopActivity = async (id: string) => {
     const activity = activities.find(a => a.id === id);
     if (!activity) return;
 
@@ -119,6 +332,19 @@ export const MultiActivityTimer = ({
 
     const endTime = new Date(activity.startTime.getTime() + activity.elapsedTime);
 
+    // Delete from active_activities (will trigger realtime DELETE)
+    const { error } = await supabase
+      .from('active_activities')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting active activity:', error);
+      toast.error('Failed to stop activity');
+      return;
+    }
+
+    // Save to completed activities
     onActivityComplete({
       name: activity.name,
       duration: activity.elapsedTime,
@@ -127,38 +353,94 @@ export const MultiActivityTimer = ({
       projectId: activity.projectId,
       tagIds: activity.tagIds,
     });
-
-    setActivities(prev => prev.filter(a => a.id !== id));
   };
 
-  const cancelActivity = (id: string) => {
+  const cancelActivity = async (id: string) => {
     const interval = intervalRefs.current.get(id);
     if (interval) {
       clearInterval(interval);
       intervalRefs.current.delete(id);
     }
-    setActivities(prev => prev.filter(a => a.id !== id));
+
+    // Delete from database
+    const { error } = await supabase
+      .from('active_activities')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error canceling active activity:', error);
+      toast.error('Failed to cancel activity');
+    }
   };
 
-  const updateActivityProject = (id: string, projectId: string | undefined) => {
+  const updateActivityProject = async (id: string, projectId: string | undefined) => {
+    const { error } = await supabase
+      .from('active_activities')
+      .update({ project_id: projectId || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating activity project:', error);
+      toast.error('Failed to update project');
+      return;
+    }
+
     setActivities(prev =>
       prev.map(act => (act.id === id ? { ...act, projectId } : act))
     );
   };
 
-  const toggleActivityTag = (id: string, tagId: string) => {
+  const toggleActivityTag = async (id: string, tagId: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (!activity) return;
+
+    const isAdding = !activity.tagIds.includes(tagId);
+
+    if (isAdding) {
+      const { error } = await supabase
+        .from('active_activity_tags')
+        .insert({ active_activity_id: id, tag_id: tagId });
+
+      if (error) {
+        console.error('Error adding tag:', error);
+        toast.error('Failed to add tag');
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from('active_activity_tags')
+        .delete()
+        .eq('active_activity_id', id)
+        .eq('tag_id', tagId);
+
+      if (error) {
+        console.error('Error removing tag:', error);
+        toast.error('Failed to remove tag');
+        return;
+      }
+    }
+
     setActivities(prev =>
       prev.map(act => {
         if (act.id === id) {
-          const tagIds = act.tagIds.includes(tagId)
-            ? act.tagIds.filter(t => t !== tagId)
-            : [...act.tagIds, tagId];
+          const tagIds = isAdding
+            ? [...act.tagIds, tagId]
+            : act.tagIds.filter(t => t !== tagId);
           return { ...act, tagIds };
         }
         return act;
       })
     );
   };
+
+  if (loading) {
+    return (
+      <Card className="p-6">
+        <p className="text-muted-foreground">Loading active timers...</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">

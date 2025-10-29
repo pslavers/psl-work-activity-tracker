@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_activities: {
+        Row: {
+          created_at: string | null
+          description: string
+          elapsed_time: number
+          id: string
+          is_running: boolean
+          paused_time: number | null
+          project_id: string | null
+          start_time: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          elapsed_time?: number
+          id?: string
+          is_running?: boolean
+          paused_time?: number | null
+          project_id?: string | null
+          start_time: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          elapsed_time?: number
+          id?: string
+          is_running?: boolean
+          paused_time?: number | null
+          project_id?: string | null
+          start_time?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      active_activity_tags: {
+        Row: {
+          active_activity_id: string
+          created_at: string | null
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          active_activity_id: string
+          created_at?: string | null
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          active_activity_id?: string
+          created_at?: string | null
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_activity_tags_active_activity_id_fkey"
+            columns: ["active_activity_id"]
+            isOneToOne: false
+            referencedRelation: "active_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "active_activity_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activities: {
         Row: {
           created_at: string | null
