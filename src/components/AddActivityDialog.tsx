@@ -22,6 +22,8 @@ interface AddActivityDialogProps {
     projectId?: string;
     tagIds: string[];
   }) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const AddActivityDialog = ({
@@ -30,9 +32,14 @@ export const AddActivityDialog = ({
   onCreateProject,
   onCreateTag,
   onAddActivity,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: AddActivityDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [activityName, setActivityName] = useState("");
+  
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
   const [date, setDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -94,12 +101,14 @@ export const AddActivityDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Past Activity
-        </Button>
-      </DialogTrigger>
+      {!controlledOpen && (
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Past Activity
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Activity</DialogTitle>

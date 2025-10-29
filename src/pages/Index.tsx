@@ -6,8 +6,14 @@ import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { AddActivityDialog } from "@/components/AddActivityDialog";
 import { EditActivityDialog } from "@/components/EditActivityDialog";
 import { Activity, Project, Tag } from "@/types/activity";
-import { Download, LogOut } from "lucide-react";
+import { Download, LogOut, Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +28,7 @@ const Index = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -428,31 +435,38 @@ const Index = () => {
           <p className="text-muted-foreground text-lg mb-4">
             Record your work activities as you do them
           </p>
-          <div className="flex gap-2 justify-center flex-wrap">
-            <AddActivityDialog
-              projects={projects}
-              tags={tags}
-              onCreateProject={handleCreateProject}
-              onCreateTag={handleCreateTag}
-              onAddActivity={handleActivityComplete}
-            />
-            <Button 
-              onClick={handleExport} 
-              variant="outline" 
-              className="gap-2"
-              disabled={activities.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              Export Activities
-            </Button>
-            <Button 
-              onClick={signOut}
-              variant="ghost" 
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
+          <div className="flex gap-2 justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center">
+                <DropdownMenuItem 
+                  onClick={() => setAddDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Past Activity
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExport}
+                  disabled={activities.length === 0}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export Activities
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={signOut}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -497,6 +511,16 @@ const Index = () => {
           onCreateProject={handleCreateProject}
           onCreateTag={handleCreateTag}
           onSave={handleSaveEdit}
+        />
+
+        <AddActivityDialog
+          projects={projects}
+          tags={tags}
+          onCreateProject={handleCreateProject}
+          onCreateTag={handleCreateTag}
+          onAddActivity={handleActivityComplete}
+          open={addDialogOpen}
+          onOpenChange={setAddDialogOpen}
         />
       </div>
     </div>
