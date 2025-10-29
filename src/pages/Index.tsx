@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ActivityTimer } from "@/components/ActivityTimer";
-import { ActivityList, Activity } from "@/components/ActivityList";
+import { ActivityList } from "@/components/ActivityList";
+import { Activity, Project, Tag } from "@/types/activity";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,20 +14,41 @@ const Index = () => {
         ...a,
         startTime: new Date(a.startTime),
         endTime: new Date(a.endTime),
+        tagIds: a.tagIds || [],
       }));
     }
     return [];
+  });
+
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem("workProjects");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [tags, setTags] = useState<Tag[]>(() => {
+    const saved = localStorage.getItem("workTags");
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
     localStorage.setItem("workActivities", JSON.stringify(activities));
   }, [activities]);
 
+  useEffect(() => {
+    localStorage.setItem("workProjects", JSON.stringify(projects));
+  }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem("workTags", JSON.stringify(tags));
+  }, [tags]);
+
   const handleActivityComplete = (activity: {
     name: string;
     duration: number;
     startTime: Date;
     endTime: Date;
+    projectId?: string;
+    tagIds: string[];
   }) => {
     const newActivity: Activity = {
       id: crypto.randomUUID(),
@@ -37,6 +59,26 @@ const Index = () => {
     toast.success("Activity recorded!", {
       description: `${activity.name} - ${formatDuration(activity.duration)}`,
     });
+  };
+
+  const handleCreateProject = (name: string, color: string) => {
+    const newProject: Project = {
+      id: crypto.randomUUID(),
+      name,
+      color,
+    };
+    setProjects((prev) => [...prev, newProject]);
+    toast.success("Project created!", { description: name });
+  };
+
+  const handleCreateTag = (name: string, color: string) => {
+    const newTag: Tag = {
+      id: crypto.randomUUID(),
+      name,
+      color,
+    };
+    setTags((prev) => [...prev, newTag]);
+    toast.success("Tag created!", { description: name });
   };
 
   const handleDelete = (id: string) => {
@@ -71,8 +113,19 @@ const Index = () => {
         </header>
 
         <div className="space-y-12">
-          <ActivityTimer onActivityComplete={handleActivityComplete} />
-          <ActivityList activities={activities} onDelete={handleDelete} />
+          <ActivityTimer 
+            onActivityComplete={handleActivityComplete}
+            projects={projects}
+            tags={tags}
+            onCreateProject={handleCreateProject}
+            onCreateTag={handleCreateTag}
+          />
+          <ActivityList 
+            activities={activities} 
+            projects={projects}
+            tags={tags}
+            onDelete={handleDelete} 
+          />
         </div>
       </div>
     </div>

@@ -1,22 +1,18 @@
 import { format } from "date-fns";
-import { Clock, Trash2 } from "lucide-react";
+import { Clock, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-export interface Activity {
-  id: string;
-  name: string;
-  duration: number;
-  startTime: Date;
-  endTime: Date;
-}
+import { Activity, Project, Tag } from "@/types/activity";
 
 interface ActivityListProps {
   activities: Activity[];
+  projects: Project[];
+  tags: Tag[];
   onDelete: (id: string) => void;
 }
 
-export const ActivityList = ({ activities, onDelete }: ActivityListProps) => {
+export const ActivityList = ({ activities, projects, tags, onDelete }: ActivityListProps) => {
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -67,19 +63,58 @@ export const ActivityList = ({ activities, onDelete }: ActivityListProps) => {
             )}
           >
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground truncate mb-1">
-                  {activity.name}
-                </h3>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {formatDuration(activity.duration)}
-                  </span>
-                  <span>•</span>
-                  <span>
-                    {format(activity.startTime, "HH:mm")} - {format(activity.endTime, "HH:mm")}
-                  </span>
+              <div className="flex-1 min-w-0 space-y-2">
+                <div>
+                  <h3 className="font-medium text-foreground truncate mb-1">
+                    {activity.name}
+                  </h3>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatDuration(activity.duration)}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {format(activity.startTime, "HH:mm")} - {format(activity.endTime, "HH:mm")}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activity.projectId && (() => {
+                    const project = projects.find(p => p.id === activity.projectId);
+                    return project ? (
+                      <Badge 
+                        variant="outline" 
+                        className="gap-1.5"
+                        style={{ 
+                          backgroundColor: `${project.color}15`,
+                          borderColor: project.color,
+                          color: project.color
+                        }}
+                      >
+                        <Folder className="h-3 w-3" />
+                        {project.name}
+                      </Badge>
+                    ) : null;
+                  })()}
+                  
+                  {activity.tagIds.map(tagId => {
+                    const tag = tags.find(t => t.id === tagId);
+                    return tag ? (
+                      <Badge 
+                        key={tag.id}
+                        variant="secondary"
+                        style={{ 
+                          backgroundColor: `${tag.color}20`,
+                          color: tag.color,
+                          borderColor: tag.color
+                        }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ) : null;
+                  })}
                 </div>
               </div>
 

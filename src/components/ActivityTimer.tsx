@@ -3,17 +3,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Play, Pause, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Project, Tag } from "@/types/activity";
+import { ProjectSelector } from "./ProjectSelector";
+import { TagSelector } from "./TagSelector";
 
 interface ActivityTimerProps {
-  onActivityComplete: (activity: { name: string; duration: number; startTime: Date; endTime: Date }) => void;
+  onActivityComplete: (activity: { 
+    name: string; 
+    duration: number; 
+    startTime: Date; 
+    endTime: Date;
+    projectId?: string;
+    tagIds: string[];
+  }) => void;
+  projects: Project[];
+  tags: Tag[];
+  onCreateProject: (name: string, color: string) => void;
+  onCreateTag: (name: string, color: string) => void;
 }
 
-export const ActivityTimer = ({ onActivityComplete }: ActivityTimerProps) => {
+export const ActivityTimer = ({ 
+  onActivityComplete, 
+  projects, 
+  tags,
+  onCreateProject,
+  onCreateTag 
+}: ActivityTimerProps) => {
   const [activityName, setActivityName] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [startTime, setStartTime] = useState<Date | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const intervalRef = useRef<number | null>(null);
   const pausedTimeRef = useRef(0);
 
@@ -67,6 +89,8 @@ export const ActivityTimer = ({ onActivityComplete }: ActivityTimerProps) => {
         duration: elapsedTime,
         startTime,
         endTime,
+        projectId: selectedProjectId,
+        tagIds: selectedTagIds,
       });
       
       setIsRunning(false);
@@ -74,8 +98,18 @@ export const ActivityTimer = ({ onActivityComplete }: ActivityTimerProps) => {
       setElapsedTime(0);
       setActivityName("");
       setStartTime(null);
+      setSelectedProjectId(undefined);
+      setSelectedTagIds([]);
       pausedTimeRef.current = 0;
     }
+  };
+
+  const handleToggleTag = (tagId: string) => {
+    setSelectedTagIds(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
   };
 
   return (
@@ -111,6 +145,21 @@ export const ActivityTimer = ({ onActivityComplete }: ActivityTimerProps) => {
                 }
               }}
             />
+
+            <div className="flex gap-2 flex-wrap">
+              <ProjectSelector
+                projects={projects}
+                selectedProjectId={selectedProjectId}
+                onSelectProject={setSelectedProjectId}
+                onCreateProject={onCreateProject}
+              />
+              <TagSelector
+                tags={tags}
+                selectedTagIds={selectedTagIds}
+                onToggleTag={handleToggleTag}
+                onCreateTag={onCreateTag}
+              />
+            </div>
 
             <div className="flex gap-3 justify-center">
               {!isRunning ? (
