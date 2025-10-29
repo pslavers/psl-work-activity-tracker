@@ -293,6 +293,52 @@ const Index = () => {
     toast.success("Activity deleted");
   };
 
+  const handleRestart = async (activity: Activity) => {
+    if (!user) return;
+
+    const startTime = new Date();
+
+    const { data, error } = await supabase
+      .from('active_activities')
+      .insert({
+        user_id: user.id,
+        description: activity.name,
+        start_time: startTime.toISOString(),
+        elapsed_time: 0,
+        is_running: true,
+        paused_time: 0,
+        project_id: activity.projectId || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error restarting activity:', error);
+      toast.error('Failed to restart activity');
+      return;
+    }
+
+    // Create active_activity_tags entries
+    if (activity.tagIds.length > 0) {
+      const { error: tagsError } = await supabase
+        .from('active_activity_tags')
+        .insert(
+          activity.tagIds.map(tagId => ({
+            active_activity_id: data.id,
+            tag_id: tagId,
+          }))
+        );
+
+      if (tagsError) {
+        console.error('Error adding tags to restarted activity:', tagsError);
+      }
+    }
+
+    toast.success('Activity restarted', {
+      description: activity.name,
+    });
+  };
+
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -426,6 +472,7 @@ const Index = () => {
               tags={tags}
               onDelete={handleDelete}
               onEdit={handleEdit}
+              onRestart={handleRestart}
             />
           </div>
           

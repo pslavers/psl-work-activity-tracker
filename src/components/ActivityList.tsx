@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Trash2, Folder, Pencil } from "lucide-react";
+import { Trash2, Folder, Pencil, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -11,9 +11,10 @@ interface ActivityListProps {
   tags: Tag[];
   onDelete: (id: string) => void;
   onEdit: (activity: Activity) => void;
+  onRestart: (activity: Activity) => void;
 }
 
-export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: ActivityListProps) => {
+export const ActivityList = ({ activities, projects, tags, onDelete, onEdit, onRestart }: ActivityListProps) => {
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -121,7 +122,16 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: A
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => onRestart(activity)}
+                  title="Restart activity"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onEdit(activity)}
+                  title="Edit activity"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -129,6 +139,7 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: A
                   variant="ghost"
                   size="icon"
                   onClick={() => onDelete(activity.id)}
+                  title="Delete activity"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
