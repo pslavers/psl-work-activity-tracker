@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Clock, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Activity, Project, Tag } from "@/types/activity";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -37,8 +37,7 @@ export const RecentActivitiesPanel = ({
   if (activities.length === 0) {
     return (
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold mb-4">
           Recent Activities
         </h3>
         <div className="text-center py-8 text-muted-foreground">
@@ -56,8 +55,7 @@ export const RecentActivitiesPanel = ({
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold">
           Recent Activities
         </h3>
         <div className="text-xs text-muted-foreground">
@@ -92,7 +90,6 @@ export const RecentActivitiesPanel = ({
               </div>
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                <Clock className="h-3 w-3" />
                 <span>
                   {format(activity.startTime, "HH:mm")} - {format(activity.endTime, "HH:mm")}
                 </span>

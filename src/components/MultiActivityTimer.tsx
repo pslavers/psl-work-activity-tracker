@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, Play, Pause, Square, X } from "lucide-react";
+import { Play, Pause, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -257,7 +257,6 @@ export const MultiActivityTimer = ({
 
       {activities.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>No active timers</p>
           <p className="text-sm mt-1">Start tracking an activity above</p>
         </div>

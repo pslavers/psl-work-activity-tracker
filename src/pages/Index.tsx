@@ -6,7 +6,7 @@ import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { AddActivityDialog } from "@/components/AddActivityDialog";
 import { EditActivityDialog } from "@/components/EditActivityDialog";
 import { Activity, Project, Tag } from "@/types/activity";
-import { Clock, Download, LogOut } from "lucide-react";
+import { Download, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -362,7 +362,6 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Clock className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -377,9 +376,6 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
         <header className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Clock className="h-8 w-8 text-primary" />
-          </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2">
             Work Activity Tracker
           </h1>

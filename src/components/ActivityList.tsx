@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Clock, Trash2, Folder, Pencil } from "lucide-react";
+import { Trash2, Folder, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,6 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: A
     return (
       <div className="w-full max-w-2xl mx-auto">
         <div className="text-center py-12 text-muted-foreground">
-          <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>No activities tracked yet</p>
           <p className="text-sm mt-1">Start your first activity to see it here</p>
         </div>
@@ -70,8 +69,7 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit }: A
                     {activity.name}
                   </h3>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
+                    <span>
                       {formatDuration(activity.duration)}
                     </span>
                     <span>•</span>

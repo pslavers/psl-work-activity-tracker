@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock } from 'lucide-react';
+
 import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
@@ -42,9 +42,6 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 mx-auto">
-            <Clock className="h-8 w-8 text-primary" />
-          </div>
           <CardTitle className="text-2xl">Work Activity Tracker</CardTitle>
           <CardDescription>
             {isSignUp ? 'Create an account to start tracking' : 'Sign in to your account'}
