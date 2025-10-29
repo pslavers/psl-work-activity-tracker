@@ -21,8 +21,7 @@ export type Database = {
           description: string
           duration: number
           id: string
-          project: string
-          tags: string[] | null
+          project_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -32,8 +31,7 @@ export type Database = {
           description: string
           duration: number
           id?: string
-          project: string
-          tags?: string[] | null
+          project_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -43,8 +41,105 @@ export type Database = {
           description?: string
           duration?: number
           id?: string
-          project?: string
-          tags?: string[] | null
+          project_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_tags: {
+        Row: {
+          activity_id: string
+          created_at: string | null
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string | null
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string | null
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_tags_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          color: string
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          id?: string
+          name?: string
           updated_at?: string | null
           user_id?: string
         }

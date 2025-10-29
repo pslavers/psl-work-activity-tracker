@@ -15,8 +15,8 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [projects] = useState<Project[]>([]);
-  const [tags] = useState<Tag[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Redirect to auth if not logged in
@@ -26,35 +26,65 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  // Load activities from database
+  // Load data from database
   useEffect(() => {
     if (!user) return;
 
-    const loadActivities = async () => {
-      const { data, error } = await supabase
-        .from('activities')
+    const loadData = async () => {
+      // Load projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
         .select('*')
+        .order('created_at', { ascending: false });
+
+      if (projectsError) {
+        toast.error('Failed to load projects');
+        console.error(projectsError);
+      } else if (projectsData) {
+        setProjects(projectsData);
+      }
+
+      // Load tags
+      const { data: tagsData, error: tagsError } = await supabase
+        .from('tags')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (tagsError) {
+        toast.error('Failed to load tags');
+        console.error(tagsError);
+      } else if (tagsData) {
+        setTags(tagsData);
+      }
+
+      // Load activities with their tags
+      const { data: activitiesData, error: activitiesError } = await supabase
+        .from('activities')
+        .select(`
+          *,
+          activity_tags(tag_id)
+        `)
         .order('date', { ascending: false });
 
-      if (error) {
+      if (activitiesError) {
         toast.error('Failed to load activities');
-        console.error(error);
-      } else if (data) {
-        const parsedActivities = data.map((a) => ({
+        console.error(activitiesError);
+      } else if (activitiesData) {
+        const parsedActivities = activitiesData.map((a) => ({
           id: a.id,
           name: a.description,
           duration: a.duration,
           startTime: new Date(a.date),
           endTime: new Date(new Date(a.date).getTime() + a.duration),
-          projectId: a.project || undefined,
-          tagIds: a.tags || [],
+          projectId: a.project_id || undefined,
+          tagIds: a.activity_tags?.map((at: any) => at.tag_id) || [],
         }));
         setActivities(parsedActivities);
       }
       setLoadingData(false);
     };
 
-    loadActivities();
+    loadData();
   }, [user]);
 
 
@@ -72,8 +102,7 @@ const Index = () => {
       .from('activities')
       .insert({
         user_id: user.id,
-        project: activity.projectId || null,
-        tags: activity.tagIds,
+        project_id: activity.projectId || null,
         description: activity.name,
         duration: activity.duration,
         date: activity.startTime.toISOString(),
@@ -85,6 +114,22 @@ const Index = () => {
       toast.error("Failed to save activity");
       console.error(error);
       return;
+    }
+
+    // Create activity_tags entries
+    if (activity.tagIds.length > 0) {
+      const { error: tagsError } = await supabase
+        .from('activity_tags')
+        .insert(
+          activity.tagIds.map(tagId => ({
+            activity_id: data.id,
+            tag_id: tagId,
+          }))
+        );
+
+      if (tagsError) {
+        console.error('Error saving activity tags:', tagsError);
+      }
     }
 
     const newActivity: Activity = {
@@ -103,17 +148,58 @@ const Index = () => {
     });
   };
 
-  const handleCreateProject = (name: string, color: string) => {
-    // Projects will be stored in cloud in future update
-    toast.info("Project feature coming soon!");
+  const handleCreateProject = async (name: string, color: string) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: user.id,
+        name,
+        color,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Failed to create project');
+      console.error(error);
+      return;
+    }
+
+    if (data) {
+      setProjects([...projects, data]);
+      toast.success('Project created');
+    }
   };
 
-  const handleCreateTag = (name: string, color: string) => {
-    // Tags will be stored in cloud in future update
-    toast.info("Tag feature coming soon!");
+  const handleCreateTag = async (name: string, color: string) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('tags')
+      .insert({
+        user_id: user.id,
+        name,
+        color,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Failed to create tag');
+      console.error(error);
+      return;
+    }
+
+    if (data) {
+      setTags([...tags, data]);
+      toast.success('Tag created');
+    }
   };
 
   const handleDelete = async (id: string) => {
+    // activity_tags will be automatically deleted due to CASCADE
     const { error } = await supabase
       .from('activities')
       .delete()
