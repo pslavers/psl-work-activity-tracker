@@ -29,8 +29,13 @@ export const TagSelector = ({
   const [isCreating, setIsCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const selectedTags = tags.filter(t => selectedTagIds.includes(t.id));
+
+  const filteredTags = tags.filter(t =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleCreate = () => {
     if (newTagName.trim()) {
@@ -82,38 +87,54 @@ export const TagSelector = ({
           
           {!isCreating ? (
             <>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tags..."
+                className="h-9"
+              />
               <div className="max-h-48 overflow-y-auto space-y-1">
-                {tags.map((tag) => {
-                  const isSelected = selectedTagIds.includes(tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      onClick={() => onToggleTag(tag.id)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
-                        isSelected && "bg-accent"
-                      )}
-                    >
-                      <span 
-                        className="w-2 h-2 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: tag.color }}
-                      />
-                      <span className="truncate">{tag.name}</span>
-                      {isSelected && (
-                        <X className="h-4 w-4 ml-auto flex-shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                {filteredTags.length === 0 && searchQuery ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                    No tags found
+                  </div>
+                ) : (
+                  filteredTags.map((tag) => {
+                    const isSelected = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        onClick={() => onToggleTag(tag.id)}
+                        className={cn(
+                          "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
+                          isSelected && "bg-accent"
+                        )}
+                      >
+                        <span 
+                          className="w-2 h-2 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        <span className="truncate">{tag.name}</span>
+                        {isSelected && (
+                          <X className="h-4 w-4 ml-auto flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsCreating(true)}
+                onClick={() => {
+                  setIsCreating(true);
+                  setNewTagName(searchQuery);
+                  setSearchQuery("");
+                }}
                 className="w-full gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Tag
+                {searchQuery ? `Create "${searchQuery}"` : "New Tag"}
               </Button>
             </>
           ) : (

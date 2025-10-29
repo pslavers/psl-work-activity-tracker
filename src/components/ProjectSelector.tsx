@@ -28,8 +28,13 @@ export const ProjectSelector = ({
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const filteredProjects = projects.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleCreate = () => {
     if (newProjectName.trim()) {
@@ -62,9 +67,18 @@ export const ProjectSelector = ({
         <div className="space-y-2">
           {!isCreating ? (
             <>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects..."
+                className="h-9"
+              />
               <div className="max-h-48 overflow-y-auto space-y-1">
                 <button
-                  onClick={() => onSelectProject(undefined)}
+                  onClick={() => {
+                    onSelectProject(undefined);
+                    setSearchQuery("");
+                  }}
                   className={cn(
                     "w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm",
                     !selectedProjectId && "bg-accent"
@@ -72,34 +86,47 @@ export const ProjectSelector = ({
                 >
                   No Project
                 </button>
-                {projects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => onSelectProject(project.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
-                      selectedProjectId === project.id && "bg-accent"
-                    )}
-                  >
-                    <span 
-                      className="w-2 h-2 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="truncate">{project.name}</span>
-                    {selectedProjectId === project.id && (
-                      <Check className="h-4 w-4 ml-auto flex-shrink-0" />
-                    )}
-                  </button>
-                ))}
+                {filteredProjects.length === 0 && searchQuery ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                    No projects found
+                  </div>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => {
+                        onSelectProject(project.id);
+                        setSearchQuery("");
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
+                        selectedProjectId === project.id && "bg-accent"
+                      )}
+                    >
+                      <span 
+                        className="w-2 h-2 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: project.color }}
+                      />
+                      <span className="truncate">{project.name}</span>
+                      {selectedProjectId === project.id && (
+                        <Check className="h-4 w-4 ml-auto flex-shrink-0" />
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsCreating(true)}
+                onClick={() => {
+                  setIsCreating(true);
+                  setNewProjectName(searchQuery);
+                  setSearchQuery("");
+                }}
                 className="w-full gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Project
+                {searchQuery ? `Create "${searchQuery}"` : "New Project"}
               </Button>
             </>
           ) : (
