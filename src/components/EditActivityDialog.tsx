@@ -18,6 +18,7 @@ interface EditActivityDialogProps {
   onCreateProject: (name: string, color: string) => void;
   onEditProject?: (projectId: string, name: string, color: string) => void;
   onCreateTag: (name: string, color: string) => void;
+  onEditTag?: (tagId: string, name: string, color: string) => void;
   onSave: (id: string, updates: {
     name: string;
     duration: number;
@@ -37,6 +38,7 @@ export const EditActivityDialog = ({
   onCreateProject,
   onEditProject,
   onCreateTag,
+  onEditTag,
   onSave,
 }: EditActivityDialogProps) => {
   const [activityName, setActivityName] = useState("");
@@ -174,6 +176,7 @@ export const EditActivityDialog = ({
               selectedTagIds={selectedTagIds}
               onToggleTag={handleToggleTag}
               onCreateTag={onCreateTag}
+              onEditTag={onEditTag}
             />
           </div>
 

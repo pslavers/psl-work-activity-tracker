@@ -232,6 +232,29 @@ const Index = () => {
     }
   };
 
+  const handleEditTag = async (tagId: string, name: string, color: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('tags')
+      .update({
+        name,
+        color,
+      })
+      .eq('id', tagId);
+
+    if (error) {
+      toast.error('Failed to update tag');
+      console.error(error);
+      return;
+    }
+
+    setTags(prev => 
+      prev.map(t => t.id === tagId ? { ...t, name, color } : t)
+    );
+    toast.success('Tag updated');
+  };
+
   const handleEdit = (activity: Activity) => {
     setEditingActivity(activity);
     setEditDialogOpen(true);
@@ -499,6 +522,7 @@ const Index = () => {
               onCreateProject={handleCreateProject}
               onEditProject={handleEditProject}
               onCreateTag={handleCreateTag}
+              onEditTag={handleEditTag}
               user={user}
             />
             <ActivityList 
@@ -532,6 +556,7 @@ const Index = () => {
           onCreateProject={handleCreateProject}
           onEditProject={handleEditProject}
           onCreateTag={handleCreateTag}
+          onEditTag={handleEditTag}
           onSave={handleSaveEdit}
         />
 
@@ -541,6 +566,7 @@ const Index = () => {
           onCreateProject={handleCreateProject}
           onEditProject={handleEditProject}
           onCreateTag={handleCreateTag}
+          onEditTag={handleEditTag}
           onAddActivity={handleActivityComplete}
           open={addDialogOpen}
           onOpenChange={setAddDialogOpen}

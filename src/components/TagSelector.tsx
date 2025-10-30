@@ -12,6 +12,7 @@ interface TagSelectorProps {
   selectedTagIds: string[];
   onToggleTag: (tagId: string) => void;
   onCreateTag: (name: string, color: string) => void;
+  onEditTag?: (tagId: string, name: string, color: string) => void;
 }
 
 const COLORS = [
@@ -25,11 +26,13 @@ export const TagSelector = ({
   selectedTagIds,
   onToggleTag,
   onCreateTag,
+  onEditTag,
 }: TagSelectorProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
   const selectedTags = tags.filter(t => selectedTagIds.includes(t.id));
 
@@ -44,6 +47,22 @@ export const TagSelector = ({
       setSelectedColor(COLORS[0]);
       setIsCreating(false);
     }
+  };
+
+  const handleEdit = () => {
+    if (editingTag && newTagName.trim() && onEditTag) {
+      onEditTag(editingTag.id, newTagName.trim(), selectedColor);
+      setNewTagName("");
+      setSelectedColor(COLORS[0]);
+      setEditingTag(null);
+    }
+  };
+
+  const startEditing = (tag: Tag) => {
+    setEditingTag(tag);
+    setNewTagName(tag.name);
+    setSelectedColor(tag.color);
+    setSearchQuery("");
   };
 
   return (
@@ -100,7 +119,7 @@ export const TagSelector = ({
             </div>
           )}
           
-          {!isCreating ? (
+          {!isCreating && !editingTag ? (
             <>
               <Input
                 value={searchQuery}
@@ -117,23 +136,37 @@ export const TagSelector = ({
                   filteredTags.map((tag) => {
                     const isSelected = selectedTagIds.includes(tag.id);
                     return (
-                      <button
+                      <div
                         key={tag.id}
-                        onClick={() => onToggleTag(tag.id)}
-                        className={cn(
-                          "w-full text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
-                          isSelected && "bg-accent"
-                        )}
+                        className="w-full flex items-center gap-2"
                       >
-                        <span 
-                          className="w-2 h-2 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        <span className="truncate">{tag.name}</span>
-                        {isSelected && (
-                          <X className="h-4 w-4 ml-auto flex-shrink-0" />
+                        <button
+                          onClick={() => onToggleTag(tag.id)}
+                          className={cn(
+                            "flex-1 text-left px-3 py-2 rounded-md hover:bg-accent flex items-center gap-2 text-sm",
+                            isSelected && "bg-accent"
+                          )}
+                        >
+                          <span 
+                            className="w-2 h-2 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          <span className="truncate">{tag.name}</span>
+                          {isSelected && (
+                            <X className="h-4 w-4 ml-auto flex-shrink-0" />
+                          )}
+                        </button>
+                        {onEditTag && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={() => startEditing(tag)}
+                          >
+                            <Plus className="h-4 w-4 rotate-45" />
+                          </Button>
                         )}
-                      </button>
+                      </div>
                     );
                   })
                 )}
@@ -160,8 +193,14 @@ export const TagSelector = ({
                 placeholder="Tag name"
                 className="h-9"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreate();
-                  if (e.key === "Escape") setIsCreating(false);
+                  if (e.key === "Enter") {
+                    if (editingTag) handleEdit();
+                    else handleCreate();
+                  }
+                  if (e.key === "Escape") {
+                    setIsCreating(false);
+                    setEditingTag(null);
+                  }
                 }}
                 autoFocus
               />
@@ -181,17 +220,18 @@ export const TagSelector = ({
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={handleCreate}
+                  onClick={editingTag ? handleEdit : handleCreate}
                   disabled={!newTagName.trim()}
                   className="flex-1"
                 >
-                  Create
+                  {editingTag ? "Save" : "Create"}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => {
                     setIsCreating(false);
+                    setEditingTag(null);
                     setNewTagName("");
                   }}
                 >

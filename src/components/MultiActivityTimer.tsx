@@ -37,6 +37,7 @@ interface MultiActivityTimerProps {
   onCreateProject: (name: string, color: string) => void;
   onEditProject?: (projectId: string, name: string, color: string) => void;
   onCreateTag: (name: string, color: string) => void;
+  onEditTag?: (tagId: string, name: string, color: string) => void;
   user: User;
 }
 
@@ -47,6 +48,7 @@ export const MultiActivityTimer = ({
   onCreateProject,
   onEditProject,
   onCreateTag,
+  onEditTag,
   user,
 }: MultiActivityTimerProps) => {
   const [activities, setActivities] = useState<ActiveActivity[]>([]);
@@ -562,6 +564,7 @@ export const MultiActivityTimer = ({
                   selectedTagIds={activity.tagIds}
                   onToggleTag={(tagId) => toggleActivityTag(activity.id, tagId)}
                   onCreateTag={onCreateTag}
+                  onEditTag={onEditTag}
                 />
               </div>
             </div>
