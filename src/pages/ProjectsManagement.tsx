@@ -113,7 +113,7 @@ export default function ProjectsManagement() {
     }
 
     if (data) {
-      setProjects([...projects, data]);
+      setProjects([...projects, data].sort((a, b) => a.name.localeCompare(b.name)));
       setProjectName("");
       setProjectColor(COLORS[0]);
       setIsCreating(false);
@@ -140,6 +140,7 @@ export default function ProjectsManagement() {
 
     setProjects(prev => 
       prev.map(p => p.id === editingProject.id ? { ...p, name: projectName.trim(), color: projectColor } : p)
+        .sort((a, b) => a.name.localeCompare(b.name))
     );
     setProjectName("");
     setProjectColor(COLORS[0]);

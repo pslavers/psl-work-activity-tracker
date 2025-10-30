@@ -113,7 +113,7 @@ export default function TagsManagement() {
     }
 
     if (data) {
-      setTags([...tags, data]);
+      setTags([...tags, data].sort((a, b) => a.name.localeCompare(b.name)));
       setTagName("");
       setTagColor(COLORS[0]);
       setIsCreating(false);
@@ -140,6 +140,7 @@ export default function TagsManagement() {
 
     setTags(prev => 
       prev.map(t => t.id === editingTag.id ? { ...t, name: tagName.trim(), color: tagColor } : t)
+        .sort((a, b) => a.name.localeCompare(b.name))
     );
     setTagName("");
     setTagColor(COLORS[0]);
