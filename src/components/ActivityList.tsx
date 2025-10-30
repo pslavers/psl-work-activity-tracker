@@ -29,10 +29,6 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit, onR
     return `< 1m`;
   };
 
-  const getTotalDuration = () => {
-    return activities.reduce((sum, activity) => sum + activity.duration, 0);
-  };
-
   if (activities.length === 0) {
     return (
       <div className="w-full max-w-2xl mx-auto">
@@ -46,12 +42,7 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit, onR
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-lg font-semibold">Today's Activities</h2>
-        <div className="text-sm text-muted-foreground">
-          Total: <span className="font-semibold text-foreground">{formatDuration(getTotalDuration())}</span>
-        </div>
-      </div>
+      <h2 className="text-lg font-semibold px-1 mb-4">Today's Activities</h2>
 
       <div className="space-y-2">
         {activities.map((activity, index) => (

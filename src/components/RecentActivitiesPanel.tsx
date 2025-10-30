@@ -48,20 +48,11 @@ export const RecentActivitiesPanel = ({
     );
   }
 
-  const getTotalDuration = () => {
-    return activities.reduce((sum, activity) => sum + activity.duration, 0);
-  };
-
   return (
     <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">
-          Recent Activities
-        </h3>
-        <div className="text-xs text-muted-foreground">
-          Total: <span className="font-semibold text-foreground">{formatDuration(getTotalDuration())}</span>
-        </div>
-      </div>
+      <h3 className="text-lg font-semibold mb-4">
+        Recent Activities
+      </h3>
 
       <div className="space-y-3">
         {recentActivities.map((activity) => {
