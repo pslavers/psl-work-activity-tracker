@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tag as TagIcon, Plus, X } from "lucide-react";
+import { Tag as TagIcon, Plus, X, Pencil } from "lucide-react";
 import { Tag } from "@/types/activity";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -159,11 +159,12 @@ export const TagSelector = ({
                         {onEditTag && (
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 flex-shrink-0"
+                            size="sm"
+                            className="h-8 px-2 flex-shrink-0"
                             onClick={() => startEditing(tag)}
+                            title="Edit tag"
                           >
-                            <Plus className="h-4 w-4 rotate-45" />
+                            <Pencil className="h-3 w-3" />
                           </Button>
                         )}
                       </div>
