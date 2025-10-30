@@ -32,10 +32,9 @@ export const ActivityList = ({ activities, projects, tags, onDelete, onEdit, onR
   if (activities.length === 0) {
     return (
       <div className="w-full max-w-2xl mx-auto">
-        <div className="text-center py-12 text-muted-foreground">
-          <p>No activities tracked yet</p>
-          <p className="text-sm mt-1">Start your first activity to see it here</p>
-        </div>
+      <div className="text-center py-12 text-muted-foreground">
+        <p>No activities tracked yet</p>
+      </div>
       </div>
     );
   }
