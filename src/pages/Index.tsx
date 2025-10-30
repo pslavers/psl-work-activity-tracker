@@ -6,7 +6,7 @@ import { RecentActivitiesPanel } from "@/components/RecentActivitiesPanel";
 import { AddActivityDialog } from "@/components/AddActivityDialog";
 import { EditActivityDialog } from "@/components/EditActivityDialog";
 import { Activity, Project, Tag } from "@/types/activity";
-import { Download, LogOut, Menu, Plus } from "lucide-react";
+import { Download, LogOut, Menu, Plus, Tag as TagIcon, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -488,6 +488,20 @@ const Index = () => {
               >
                 <Plus className="h-4 w-4" />
                 Add Past Activity
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => navigate('/tags')}
+                className="gap-2"
+              >
+                <TagIcon className="h-4 w-4" />
+                Manage Tags
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => navigate('/projects')}
+                className="gap-2"
+              >
+                <FolderKanban className="h-4 w-4" />
+                Manage Projects
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={handleExport}
